@@ -1,65 +1,53 @@
-# 🖐️ Hand Mouse Pro (No Coding Needed)
+# 🖐️ Hand Mouse Pro
 
-Control your computer mouse using your hand and webcam.
+Control your mouse using your hand and webcam.
 
 ---
 
 ## ⭐ Features
-- Move mouse with your hand
+- Move mouse with hand tracking
 - Left click (Thumb + Index finger)
 - Right click (Thumb + Middle finger)
-- Smooth and stable movement
-- FPS display
+- Smooth cursor movement
+- FPS counter
+- Real-time webcam tracking
 
 ---
 
-## 📦 Requirements (IMPORTANT)
-Before starting, you only need:
+## 📦 Requirements
+You need:
 
-- A Windows PC (10/11)
-- Webcam (built-in or external)
-- Internet connection (for first setup)
+- Windows 10 / 11
+- Python 3.11 (recommended)
+- Webcam
+- Internet (only for installation)
 
 ---
 
 ## 🚀 EASY INSTALLATION (NO CODING)
 
 ### STEP 1: Install Python
-
-Download Python here:
+Download Python:
 
 https://www.python.org/downloads/
 
-👉 During installation:
-✔ CHECK “Add Python to PATH”  
-✔ Click Install
+✔ IMPORTANT:
+- Check ✅ “Add Python to PATH”
+- Click Install
 
 ---
 
-### STEP 2: Download the Project
-
-Click:
-
-👉 **Code → Download ZIP**
-
-Then extract the folder.
+### STEP 2: Download Project
+- Click **Code → Download ZIP**
+- Extract the folder
 
 ---
 
-### STEP 3: Open Folder
+### STEP 3: Open Terminal in Folder
 
-Open the extracted folder:
-```
-Hand-Mouse-Pro
-```
+Open the extracted folder and:
 
----
-
-### STEP 4: Install Everything Automatically
-
-Inside the folder:
-
-1. Click on the address bar
+1. Click the folder path bar
 2. Type:
 
 ```
@@ -68,65 +56,73 @@ cmd
 
 3. Press Enter
 
-Now a black window opens.
+---
 
-Paste this command:
+### STEP 4: Install Required Libraries
+
+Copy and paste this command:
 
 ```bash
-pip install -r requirements.txt
+pip install opencv-python mediapipe==0.10.14 pyautogui
 ```
 
-Wait until it finishes.
+Wait until installation finishes.
 
 ---
 
 ### STEP 5: Run the Program
 
-In the same black window, type:
+Now run:
 
 ```bash
 python hand_mouse.py
 ```
 
-Press Enter.
-
 ---
 
 ## 🎮 HOW TO USE
 
-- ✋ Move your hand → moves mouse
+- ✋ Move hand → Move mouse cursor
 - 🤏 Thumb + Index finger → LEFT CLICK
 - 🤏 Thumb + Middle finger → RIGHT CLICK
-- ✋ Move hand away → stop movement
+- ✋ Remove hand → stop control
 
-Press **Q** to exit the program.
+Press **Q** to exit.
 
 ---
 
 ## ⚠️ TROUBLESHOOTING
 
-### ❌ Camera not opening
-- Close other apps using webcam (Zoom, Meet, etc.)
+### ❌ Camera not working
+- Close Zoom / Meet / camera apps
 
-### ❌ Lag / shaky movement
-- Use good lighting
-- Keep hand 40–70 cm from camera
+### ❌ Lag or shaking
+- Improve lighting
+- Keep hand steady
+- Stay 40–70 cm from camera
 
-### ❌ pip not working
+### ❌ pip error
 Run:
 
 ```bash
 python -m pip install --upgrade pip
 ```
 
+Then reinstall:
+
+```bash
+pip install opencv-python mediapipe==0.10.14 pyautogui
+```
+
 ---
 
-## 🧠 Recommended Setup
-- Bright room
+## 🧠 Best Performance Tips
+- Use good lighting
 - Plain background
-- 720p or 1080p webcam
+- Only one hand in frame
+- 720p or 1080p webcam recommended
 
 ---
 
-## 💡 Tip
-For best performance, keep only ONE hand in the camera view.
+## 💡 Made for beginners
+No coding knowledge required — just install and run.
