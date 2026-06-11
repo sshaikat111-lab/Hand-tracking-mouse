@@ -1,83 +1,231 @@
 import cv2
+import mediapipe as mp
 import pyautogui
-from cvzone.HandTrackingModule import HandDetector
+import math
+import time
 
-cap = cv2.VideoCapture(0)
+# ================= SETTINGS =================
 
-detector = HandDetector(detectionCon=0.8, maxHands=1)
+SMOOTHING = 15
+CLICK_DISTANCE = 20
+FRAME_REDUCTION = 80
+DEAD_ZONE = 8
+
+pyautogui.FAILSAFE = True
 
 screen_w, screen_h = pyautogui.size()
 
-while True:
-    success, img = cap.read()
-    img = cv2.flip(img, 1)
-
-    hands, img = detector.findHands(img)
-
-    if hands:
-        hand = hands[0]
-        lmList = hand["lmList"]
-
-        index_x, index_y = lmList[8][0], lmList[8][1]
-
-        cam_h, cam_w, _ = img.shape
-
-        screen_x = int(index_x * screen_w / cam_w)
-        screen_y = int(index_y * screen_h / cam_h)
-
-        pyautogui.moveTo(screen_x, screen_y)
-
-        fingers = detector.fingersUp(hand)
-
-        # Index + Middle finger together = Click
-        if fingers[1] == 1 and fingers[2] == 1:
-            pyautogui.click()
-
-    cv2.imshow("Hand Mouse Control", img)
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-cap.release()
-cv2.destroyAllWindows()import cv2
-import pyautogui
-from cvzone.HandTrackingModule import HandDetector
+# ================= CAMERA =================
 
 cap = cv2.VideoCapture(0)
 
-detector = HandDetector(detectionCon=0.8, maxHands=1)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
+cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
-screen_w, screen_h = pyautogui.size()
+# ================= MEDIAPIPE =================
+
+mp_hands = mp.solutions.hands
+
+hands = mp_hands.Hands(
+    static_image_mode=False,
+    max_num_hands=1,
+    min_detection_confidence=0.85,
+    min_tracking_confidence=0.85
+)
+
+mp_draw = mp.solutions.drawing_utils
+
+# ================= VARIABLES =================
+
+prev_x, prev_y = 0, 0
+last_click_time = 0
+p_time = 0
+
+# ================= FUNCTIONS =================
+
+def distance(p1, p2):
+    return math.hypot(
+        p2[0] - p1[0],
+        p2[1] - p1[1]
+    )
+
+# ================= MAIN LOOP =================
 
 while True:
-    success, img = cap.read()
-    img = cv2.flip(img, 1)
 
-    hands, img = detector.findHands(img)
+    success, frame = cap.read()
 
-    if hands:
-        hand = hands[0]
-        lmList = hand["lmList"]
+    if not success:
+        continue
 
-        index_x, index_y = lmList[8][0], lmList[8][1]
+    frame = cv2.flip(frame, 1)
 
-        cam_h, cam_w, _ = img.shape
+    h, w, _ = frame.shape
 
-        screen_x = int(index_x * screen_w / cam_w)
-        screen_y = int(index_y * screen_h / cam_h)
+    cv2.rectangle(
+        frame,
+        (FRAME_REDUCTION, FRAME_REDUCTION),
+        (w - FRAME_REDUCTION, h - FRAME_REDUCTION),
+        (255, 0, 255),
+        2
+    )
 
-        pyautogui.moveTo(screen_x, screen_y)
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        fingers = detector.fingersUp(hand)
+    results = hands.process(rgb)
 
-        # Index + Middle finger together = Click
-        if fingers[1] == 1 and fingers[2] == 1:
-            pyautogui.click()
+    if results.multi_hand_landmarks:
 
-    cv2.imshow("Hand Mouse Control", img)
+        hand_landmarks = results.multi_hand_landmarks[0]
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+        lm = []
+
+        for landmark in hand_landmarks.landmark:
+
+            x = int(landmark.x * w)
+            y = int(landmark.y * h)
+
+            lm.append((x, y))
+
+        thumb_tip = lm[4]
+        index_tip = lm[8]
+        middle_tip = lm[12]
+
+        # ==========================================
+        # STABLE CURSOR CONTROL USING HAND CENTER
+        # ==========================================
+
+        hand_x = (
+            lm[5][0] +
+            lm[9][0] +
+            lm[13][0]
+        ) / 3
+
+        hand_y = (
+            lm[5][1] +
+            lm[9][1] +
+            lm[13][1]
+        ) / 3
+
+        mouse_x = (
+            (hand_x - FRAME_REDUCTION)
+            * screen_w
+            / (w - 2 * FRAME_REDUCTION)
+        )
+
+        mouse_y = (
+            (hand_y - FRAME_REDUCTION)
+            * screen_h
+            / (h - 2 * FRAME_REDUCTION)
+        )
+
+        mouse_x = max(
+            0,
+            min(screen_w, mouse_x)
+        )
+
+        mouse_y = max(
+            0,
+            min(screen_h, mouse_y)
+        )
+
+        # Ignore tiny shakes
+
+        if abs(mouse_x - prev_x) < DEAD_ZONE:
+            mouse_x = prev_x
+
+        if abs(mouse_y - prev_y) < DEAD_ZONE:
+            mouse_y = prev_y
+
+        # Smooth movement
+
+        curr_x = prev_x + (
+            mouse_x - prev_x
+        ) / SMOOTHING
+
+        curr_y = prev_y + (
+            mouse_y - prev_y
+        ) / SMOOTHING
+
+        pyautogui.moveTo(curr_x, curr_y)
+
+        prev_x = curr_x
+        prev_y = curr_y
+
+        # ==========================================
+        # LEFT CLICK
+        # ==========================================
+
+        if distance(
+            thumb_tip,
+            index_tip
+        ) < CLICK_DISTANCE:
+
+            if (
+                time.time()
+                - last_click_time
+            ) > 0.5:
+
+                pyautogui.click()
+
+                last_click_time = time.time()
+
+        # ==========================================
+        # RIGHT CLICK
+        # ==========================================
+
+        if distance(
+            thumb_tip,
+            middle_tip
+        ) < CLICK_DISTANCE:
+
+            if (
+                time.time()
+                - last_click_time
+            ) > 0.5:
+
+                pyautogui.rightClick()
+
+                last_click_time = time.time()
+
+        mp_draw.draw_landmarks(
+            frame,
+            hand_landmarks,
+            mp_hands.HAND_CONNECTIONS
+        )
+
+    # ================= FPS =================
+
+    c_time = time.time()
+
+    fps = (
+        1 / (c_time - p_time)
+        if p_time != 0
+        else 0
+    )
+
+    p_time = c_time
+
+    cv2.putText(
+        frame,
+        f"FPS: {int(fps)}",
+        (10, 40),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0, 255, 0),
+        2
+    )
+
+    cv2.imshow(
+        "Hand Mouse Pro",
+        frame
+    )
+
+    if cv2.waitKey(1) & 0xFF == ord("q"):
         break
+
+# ================= CLEANUP =================
 
 cap.release()
 cv2.destroyAllWindows()
